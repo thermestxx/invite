@@ -55,10 +55,6 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
   100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
 }
 
-@media (prefers-reduced-motion:reduce){
-  .stage.open .card{animation:none;opacity:1;transform:translate(-50%,-50%) scale(1)}
-}
-
 .card-inner{position:relative;width:100%;height:100%;cursor:pointer;
   transform-style:preserve-3d;transition:transform .8s cubic-bezier(.4,.15,.2,1)}
 .card.flipped .card-inner{transform:rotateY(180deg)}
@@ -95,9 +91,6 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
 .replay:hover{opacity:1}
 .replay[hidden]{display:none}
 
-@media (prefers-reduced-motion:reduce){
-  .env,.card,.flap,.seal{transition-duration:.01ms!important}.hint{animation:none}
-}
 </style>
 </head>
 <body>
@@ -139,18 +132,21 @@ function resizeConfetti(){confettiCanvas.width=innerWidth;confettiCanvas.height=
 addEventListener("resize",resizeConfetti);
 resizeConfetti();
 function burstConfetti(){
-  const colors=["#AC5A38","#C67F5C","#D9C5A6","#BBA378","#8C9A6B","#E7C98F","#F1E7D6"];
-  const originX=confettiCanvas.width/2,originY=confettiCanvas.height*.4;
-  const count=matchMedia("(max-width:480px)").matches?70:120;
+  const colors=["#AC5A38","#C67F5C","#D9C5A6","#BBA378","#8C9A6B","#E7C98F","#F1E7D6","#D4AF37"];
+  const originY=confettiCanvas.height*.38;
+  const isMobile=matchMedia("(max-width:480px)").matches;
+  const count=isMobile?130:190;
+  const origins=[confettiCanvas.width*.5,confettiCanvas.width*.28,confettiCanvas.width*.72];
   const pieces=Array.from({length:count},()=>{
-    const angle=Math.PI+Math.random()*Math.PI,speed=3+Math.random()*7;
-    return{x:originX+(Math.random()-.5)*60,y:originY,
-      vx:Math.cos(angle)*speed*.6+(Math.random()-.5)*3,
-      vy:-Math.abs(Math.sin(angle))*speed-2,
-      g:.22+Math.random()*.14,size:4+Math.random()*5,
+    const originX=origins[Math.floor(Math.random()*origins.length)];
+    const angle=Math.PI+Math.random()*Math.PI,speed=4+Math.random()*8.5;
+    return{x:originX+(Math.random()-.5)*50,y:originY,
+      vx:Math.cos(angle)*speed*.65+(Math.random()-.5)*3.5,
+      vy:-Math.abs(Math.sin(angle))*speed-3,
+      g:.2+Math.random()*.13,size:4+Math.random()*6,
       color:colors[Math.floor(Math.random()*colors.length)],
-      rot:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.35,
-      shape:Math.random()<.5?"rect":"circle",life:1,decay:.006+Math.random()*.006};
+      rot:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.4,
+      shape:Math.random()<.5?"rect":"circle",life:1,decay:.0038+Math.random()*.0042};
   });
   cancelAnimationFrame(confettiRAF);
   function tick(){
@@ -176,7 +172,7 @@ function burstConfetti(){
   tick();
 }
 function open(){if(stage.classList.contains("open"))return;stage.classList.add("open");setTimeout(()=>replay.hidden=false,1500);
-  if(!matchMedia("(prefers-reduced-motion:reduce)").matches)setTimeout(burstConfetti,420);}
+  setTimeout(burstConfetti,420);}
 function close(){stage.classList.remove("open");replay.hidden=true;card.classList.remove("flipped");
   cancelAnimationFrame(confettiRAF);confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);}
 stage.addEventListener("click",open);
