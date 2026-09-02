@@ -44,8 +44,20 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
 .card{position:absolute;left:50%;top:50%;height:min(78vh,540px);aspect-ratio:1024/1536;
   transform:translate(-50%,-44%) scale(.42);opacity:0;z-index:5;border-radius:9px;
   box-shadow:0 30px 60px -22px rgba(74,59,48,.55);perspective:1800px;
-  transition:opacity .7s ease .45s,transform .95s cubic-bezier(.2,.85,.2,1) .45s}
-.stage.open .card{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  transition:opacity .5s ease,transform .6s cubic-bezier(.4,0,.2,1)}
+.stage.open .card{animation:cardPop 1.05s cubic-bezier(.2,.7,.2,1) .42s both}
+
+@keyframes cardPop{
+  0%{opacity:0;transform:translate(-50%,-38%) scale(.32) rotate(-5deg)}
+  45%{opacity:1;transform:translate(-50%,-56%) scale(1.07) rotate(2deg)}
+  68%{transform:translate(-50%,-48%) scale(.97) rotate(-1deg)}
+  85%{transform:translate(-50%,-51%) scale(1.015) rotate(.4deg)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .stage.open .card{animation:none;opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
 
 .card-inner{position:relative;width:100%;height:100%;cursor:pointer;
   transform-style:preserve-3d;transition:transform .8s cubic-bezier(.4,.15,.2,1)}
@@ -68,6 +80,8 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
 
 .flip-hint{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);
   font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink);opacity:.5}
+
+#confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:50}
 
 .hint{position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);white-space:nowrap;
   font-family:"Pinyon Script",cursive;font-size:23px;color:var(--terra);
@@ -114,12 +128,57 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
     <div class="hint" id="hint">Maach mech op !</div>
   </div>
   <button class="replay" id="replay" hidden>&#8635; nach eng Kéier</button>
+  <canvas id="confetti" aria-hidden="true"></canvas>
 
 <script>
 const stage=document.getElementById("stage"),replay=document.getElementById("replay"),
-  card=document.getElementById("card"),cardInner=document.getElementById("cardInner");
-function open(){if(stage.classList.contains("open"))return;stage.classList.add("open");setTimeout(()=>replay.hidden=false,1500);}
-function close(){stage.classList.remove("open");replay.hidden=true;card.classList.remove("flipped");}
+  card=document.getElementById("card"),cardInner=document.getElementById("cardInner"),
+  confettiCanvas=document.getElementById("confetti"),confettiCtx=confettiCanvas.getContext("2d");
+let confettiRAF=null;
+function resizeConfetti(){confettiCanvas.width=innerWidth;confettiCanvas.height=innerHeight;}
+addEventListener("resize",resizeConfetti);
+resizeConfetti();
+function burstConfetti(){
+  const colors=["#AC5A38","#C67F5C","#D9C5A6","#BBA378","#8C9A6B","#E7C98F","#F1E7D6"];
+  const originX=confettiCanvas.width/2,originY=confettiCanvas.height*.4;
+  const count=matchMedia("(max-width:480px)").matches?70:120;
+  const pieces=Array.from({length:count},()=>{
+    const angle=Math.PI+Math.random()*Math.PI,speed=3+Math.random()*7;
+    return{x:originX+(Math.random()-.5)*60,y:originY,
+      vx:Math.cos(angle)*speed*.6+(Math.random()-.5)*3,
+      vy:-Math.abs(Math.sin(angle))*speed-2,
+      g:.22+Math.random()*.14,size:4+Math.random()*5,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.35,
+      shape:Math.random()<.5?"rect":"circle",life:1,decay:.006+Math.random()*.006};
+  });
+  cancelAnimationFrame(confettiRAF);
+  function tick(){
+    confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    let alive=false;
+    for(const p of pieces){
+      if(p.life<=0)continue;
+      p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life-=p.decay;
+      if(p.y>confettiCanvas.height+30||p.life<=0)continue;
+      alive=true;
+      confettiCtx.save();
+      confettiCtx.globalAlpha=Math.max(p.life,0);
+      confettiCtx.translate(p.x,p.y);
+      confettiCtx.rotate(p.rot);
+      confettiCtx.fillStyle=p.color;
+      if(p.shape==="rect")confettiCtx.fillRect(-p.size/2,-p.size*.3,p.size,p.size*.6);
+      else{confettiCtx.beginPath();confettiCtx.arc(0,0,p.size/2,0,Math.PI*2);confettiCtx.fill();}
+      confettiCtx.restore();
+    }
+    if(alive)confettiRAF=requestAnimationFrame(tick);
+    else confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  }
+  tick();
+}
+function open(){if(stage.classList.contains("open"))return;stage.classList.add("open");setTimeout(()=>replay.hidden=false,1500);
+  if(!matchMedia("(prefers-reduced-motion:reduce)").matches)setTimeout(burstConfetti,420);}
+function close(){stage.classList.remove("open");replay.hidden=true;card.classList.remove("flipped");
+  cancelAnimationFrame(confettiRAF);confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);}
 stage.addEventListener("click",open);
 stage.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});
 replay.addEventListener("click",close);
