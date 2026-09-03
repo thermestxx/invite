@@ -117,15 +117,51 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
 .info-names{font-family:"Jost",sans-serif;font-weight:400;color:var(--charcoal);
   margin-top:.2em;font-size:clamp(9.5px,2.6cqw,13px)}
 
-.rsvp-content{position:absolute;inset:0;padding:10% 9% 8%;display:flex;flex-direction:column;
-  align-items:center;text-align:center}
+.rsvp-content{position:absolute;inset:0;padding:9% 9% 8%;display:flex;flex-direction:column;
+  align-items:center;text-align:center;overflow-y:auto}
 .rsvp-title{font-family:"Pinyon Script",cursive;color:var(--terra);
   font-size:clamp(21px,7.5cqw,30px);margin-bottom:1.5%}
 .rsvp-sub{font-family:"Jost",sans-serif;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--charcoal);margin-bottom:4%;font-size:clamp(9.5px,2.6cqw,12px)}
-.rsvp-frame-wrap{flex:1;min-height:0;width:100%;border-radius:10px;overflow:hidden;background:#fff;
-  position:relative;box-shadow:inset 0 0 0 1px rgba(74,59,48,.08)}
-.rsvp-frame-wrap iframe{display:block;position:absolute;top:0;left:0;border:0;width:760px;transform-origin:0 0}
+  color:var(--charcoal);margin-bottom:5%;font-size:clamp(9.5px,2.6cqw,12px)}
+
+.rsvp-form{width:100%;max-width:340px;display:flex;flex-direction:column;
+  gap:clamp(12px,3.2cqw,18px);text-align:left}
+.rsvp-field label{display:block;font-family:"Jost",sans-serif;font-weight:600;color:var(--charcoal);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:.45em;
+  font-size:clamp(9px,2.4cqw,11.5px)}
+.rsvp-field input[type="text"],.rsvp-field input[type="email"],.rsvp-field textarea{
+  width:100%;border:none;border-bottom:1.5px solid rgba(107,90,72,.35);background:transparent;
+  color:var(--charcoal);font-family:"Jost",sans-serif;padding:.4em .1em;
+  font-size:clamp(10px,2.8cqw,13.5px);outline:none;transition:border-color .2s ease}
+.rsvp-field input:focus,.rsvp-field textarea:focus{border-color:var(--terra)}
+.rsvp-field textarea{resize:none;min-height:2.6em;border:1.5px solid rgba(107,90,72,.35);
+  border-radius:6px;padding:.5em .6em}
+.rsvp-field textarea:focus{border-color:var(--terra)}
+.rsvp-radios{display:flex;flex-direction:column;gap:.5em}
+.rsvp-radio{display:flex;align-items:center;gap:.55em;cursor:pointer;
+  font-family:"Jost",sans-serif;color:var(--charcoal);font-size:clamp(10px,2.8cqw,13.5px)}
+.rsvp-radio input{accent-color:var(--terra);width:15px;height:15px;flex:none}
+.rsvp-submit{margin-top:.3em;align-self:center;display:inline-block;padding:10px 30px;
+  border-radius:999px;border:1px solid var(--terra);color:var(--terra);
+  background:rgba(172,90,56,.12);font-family:"Jost",sans-serif;letter-spacing:1.8px;
+  text-transform:uppercase;cursor:pointer;transition:background .25s ease,color .25s ease;
+  font-size:clamp(10px,2.8cqw,13px)}
+.rsvp-submit:hover{background:var(--terra);color:var(--ivory)}
+.rsvp-submit:disabled{opacity:.55;cursor:default}
+.rsvp-fallback{margin-top:.8em;font-family:"Jost",sans-serif;color:var(--ink);opacity:.7;
+  font-size:clamp(8px,2.2cqw,10px)}
+.rsvp-fallback a{color:var(--terra)}
+.rsvp-error{margin-top:.5em;font-family:"Jost",sans-serif;color:#a13c2e;text-align:center;
+  font-size:clamp(8.5px,2.4cqw,11px)}
+
+.rsvp-thanks{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:10px}
+.rsvp-thanks.show{display:flex}
+.rsvp-form.hide{display:none}
+.rsvp-thanks-mark{font-family:"Pinyon Script",cursive;color:var(--terra);
+  font-size:clamp(26px,9cqw,38px)}
+.rsvp-thanks p{font-family:"Jost",sans-serif;color:var(--charcoal);
+  font-size:clamp(10px,2.8cqw,13.5px);max-width:280px}
 
 .page-dots{position:absolute;bottom:3.5%;left:50%;transform:translateX(-50%);
   display:flex;gap:9px;z-index:6;cursor:pointer}
@@ -211,8 +247,38 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
           <div class="rsvp-content">
             <div class="rsvp-title">Umellung</div>
             <div class="rsvp-sub">Mir freeën eis, vun Iech ze héieren</div>
-            <div class="rsvp-frame-wrap" id="rsvpFrameWrap">
-              <iframe id="rsvpFrame" src="https://docs.google.com/forms/d/e/1FAIpQLSfoeJV-6FbPZ4eo8e8NM7cz1l6E0MezKDu4ky92hTa6KKS15w/viewform?embedded=true" title="Umellung">Lued...</iframe>
+            <form class="rsvp-form" id="rsvpForm">
+              <div class="rsvp-field">
+                <label for="rsvpName">Virnumm an Numm</label>
+                <input type="text" id="rsvpName" required>
+              </div>
+              <div class="rsvp-field">
+                <label>Unzuel Gäscht</label>
+                <div class="rsvp-radios">
+                  <label class="rsvp-radio"><input type="radio" name="guestCount" value="1" required> 1</label>
+                  <label class="rsvp-radio"><input type="radio" name="guestCount" value="2"> 2</label>
+                  <label class="rsvp-radio"><input type="radio" name="guestCount" value="Ech ka leider net kommen"> Ech ka leider net kommen</label>
+                </div>
+              </div>
+              <div class="rsvp-field">
+                <label for="rsvpEmail">Email</label>
+                <input type="email" id="rsvpEmail" required>
+              </div>
+              <div class="rsvp-field">
+                <label for="rsvpAllergies">Allergien oder aner Ufuerderungen fir d'Iessen</label>
+                <input type="text" id="rsvpAllergies">
+              </div>
+              <div class="rsvp-field">
+                <label for="rsvpComment">Kommentar</label>
+                <textarea id="rsvpComment"></textarea>
+              </div>
+              <button type="submit" class="rsvp-submit" id="rsvpSubmit">Umellen</button>
+              <div class="rsvp-error" id="rsvpError" hidden>Et ass eppes falsch gaang. Probéiert w.e.g. nach eng Kéier.</div>
+              <div class="rsvp-fallback">Klappt et net? <a href="https://docs.google.com/forms/d/e/1FAIpQLSfoeJV-6FbPZ4eo8e8NM7cz1l6E0MezKDu4ky92hTa6KKS15w/viewform" target="_blank" rel="noopener">Formulaire an engem neien Tab opmaachen</a></div>
+            </form>
+            <div class="rsvp-thanks" id="rsvpThanks">
+              <div class="rsvp-thanks-mark">Merci!</div>
+              <p>Är Umellung ass ukomm. Mir freeën eis drop!</p>
             </div>
           </div>
         </div>
@@ -247,7 +313,8 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
 const stage=document.getElementById("stage"),replay=document.getElementById("replay"),
   book=document.getElementById("book"),bookTrack=document.getElementById("bookTrack"),
   dots=Array.from(document.querySelectorAll(".page-dot")),
-  rsvpFrameWrap=document.getElementById("rsvpFrameWrap"),rsvpFrame=document.getElementById("rsvpFrame"),
+  rsvpForm=document.getElementById("rsvpForm"),rsvpThanks=document.getElementById("rsvpThanks"),
+  rsvpSubmit=document.getElementById("rsvpSubmit"),rsvpError=document.getElementById("rsvpError"),
   confettiCanvas=document.getElementById("confetti"),confettiCtx=confettiCanvas.getContext("2d");
 let confettiRAF=null,currentPage=0;
 const PAGE_COUNT=4;
@@ -309,14 +376,37 @@ function open(){if(stage.classList.contains("open"))return;stage.classList.add("
 function close(){stage.classList.remove("open");replay.hidden=true;goToPage(0);
   cancelAnimationFrame(confettiRAF);confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);}
 
-const RSVP_FRAME_W=760;
-function scaleRsvpFrame(){
-  const scale=rsvpFrameWrap.clientWidth/RSVP_FRAME_W;
-  rsvpFrame.style.transform="scale("+scale+")";
-  rsvpFrame.style.height=(rsvpFrameWrap.clientHeight/scale)+"px";
-}
-scaleRsvpFrame();
-addEventListener("resize",scaleRsvpFrame);
+const RSVP_ENDPOINT="https://script.google.com/macros/s/AKfycbzj6z96Jr2DPl3CbAdnnCmPC1CK-ELWoPX7WcJakSlnqLOX4F3KYVmBBsN0CQ-gh8VsUA/exec";
+rsvpForm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  rsvpError.hidden=true;
+  rsvpSubmit.disabled=true;
+  rsvpSubmit.textContent="Gëtt geschéckt…";
+  const guestCount=document.querySelector('input[name="guestCount"]:checked');
+  const payload={
+    "Virnumm an Numm":document.getElementById("rsvpName").value,
+    "Unzuel Gäscht":guestCount?guestCount.value:"",
+    "Email":document.getElementById("rsvpEmail").value,
+    "Allergien oder aner Ufuerderungen fir d'Iessen":document.getElementById("rsvpAllergies").value,
+    "Kommentar":document.getElementById("rsvpComment").value
+  };
+  try{
+    const res=await fetch(RSVP_ENDPOINT,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(payload)
+    });
+    const json=await res.json();
+    if(json.status!=="ok")throw new Error(json.message||"unknown error");
+    rsvpForm.classList.add("hide");
+    rsvpThanks.classList.add("show");
+  }catch(err){
+    console.error("RSVP submit failed:",err);
+    rsvpError.hidden=false;
+    rsvpSubmit.disabled=false;
+    rsvpSubmit.textContent="Umellen";
+  }
+});
 
 stage.addEventListener("click",open);
 stage.addEventListener("keydown",e=>{
@@ -331,9 +421,12 @@ replay.addEventListener("click",close);
 
 dots.forEach((d,i)=>d.addEventListener("click",e=>{e.stopPropagation();goToPage(i);}));
 
+function isInteractive(el){
+  return !!el.closest("input, textarea, select, button, a, label, .page-dots, .rsvp-form");
+}
 let dragX=null,dragY=null,didSwipe=false;
 book.addEventListener("pointerdown",e=>{
-  if(!stage.classList.contains("open"))return;
+  if(!stage.classList.contains("open")||isInteractive(e.target))return;
   dragX=e.clientX;dragY=e.clientY;didSwipe=false;
 });
 book.addEventListener("pointerup",e=>{
@@ -346,7 +439,7 @@ book.addEventListener("pointerup",e=>{
   dragX=null;dragY=null;
 });
 book.addEventListener("click",e=>{
-  if(!stage.classList.contains("open"))return;
+  if(!stage.classList.contains("open")||isInteractive(e.target))return;
   if(didSwipe){didSwipe=false;return;}
   const rect=book.getBoundingClientRect();
   const relX=(e.clientX-rect.left)/rect.width;
