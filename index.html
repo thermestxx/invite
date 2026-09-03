@@ -163,6 +163,15 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
 .rsvp-thanks p{font-family:"Jost",sans-serif;color:var(--charcoal);
   font-size:clamp(10px,2.8cqw,13.5px);max-width:280px}
 
+.rsvp-summary{border:1px solid rgba(107,90,72,.25);border-radius:10px;padding:.9em 1em;
+  width:100%;max-width:300px;text-align:left}
+.rsvp-summary-row{display:flex;justify-content:space-between;gap:1em;margin:.25em 0}
+.rsvp-summary-row .k{color:var(--ink);opacity:.75}
+.rsvp-summary-row .v{color:var(--charcoal);font-weight:600;text-align:right}
+.rsvp-check-again{margin-top:.6em;background:none;border:none;padding:0;cursor:pointer;
+  color:var(--terra);text-decoration:underline;font-family:"Jost",sans-serif;
+  font-size:clamp(8.5px,2.2cqw,11px)}
+
 .page-dots{position:absolute;bottom:3.5%;left:50%;transform:translateX(-50%);
   display:flex;gap:9px;z-index:6;cursor:pointer}
 .page-dot{width:7px;height:7px;border-radius:50%;background:rgba(107,90,72,.28);
@@ -278,7 +287,14 @@ body{min-height:100dvh;background:radial-gradient(130% 90% at 50% 12%,#F7EFE1,#E
             </form>
             <div class="rsvp-thanks" id="rsvpThanks">
               <div class="rsvp-thanks-mark">Merci!</div>
-              <p>Är Umellung ass ukomm. Mir freeën eis drop!</p>
+              <p id="rsvpThanksText">Är Umellung ass ukomm. Mir freeën eis drop!</p>
+            </div>
+            <div class="rsvp-thanks" id="rsvpAlready">
+              <div class="rsvp-thanks-mark">Schonn ugemellt!</div>
+              <p>Mir hu scho eng Umellung mat dëser Email:</p>
+              <div class="rsvp-summary" id="rsvpAlreadySummary"></div>
+              <button type="button" class="rsvp-submit" id="rsvpAlreadyEdit">Meng Umellung änneren</button>
+              <button type="button" class="rsvp-check-again" id="rsvpAlreadyBack">Nach een aneren umellen</button>
             </div>
           </div>
         </div>
@@ -315,8 +331,12 @@ const stage=document.getElementById("stage"),replay=document.getElementById("rep
   dots=Array.from(document.querySelectorAll(".page-dot")),
   rsvpForm=document.getElementById("rsvpForm"),rsvpThanks=document.getElementById("rsvpThanks"),
   rsvpSubmit=document.getElementById("rsvpSubmit"),rsvpError=document.getElementById("rsvpError"),
+  rsvpAlready=document.getElementById("rsvpAlready"),rsvpAlreadySummary=document.getElementById("rsvpAlreadySummary"),
+  rsvpAlreadyBack=document.getElementById("rsvpAlreadyBack"),rsvpAlreadyEdit=document.getElementById("rsvpAlreadyEdit"),
+  rsvpThanksText=document.getElementById("rsvpThanksText"),
   confettiCanvas=document.getElementById("confetti"),confettiCtx=confettiCanvas.getContext("2d");
 let confettiRAF=null,currentPage=0;
+let rsvpUpdateEmail=null;
 const PAGE_COUNT=4;
 
 function resizeConfetti(){confettiCanvas.width=innerWidth;confettiCanvas.height=innerHeight;}
@@ -377,6 +397,8 @@ function close(){stage.classList.remove("open");replay.hidden=true;goToPage(0);
   cancelAnimationFrame(confettiRAF);confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);}
 
 const RSVP_ENDPOINT="https://script.google.com/macros/s/AKfycbzj6z96Jr2DPl3CbAdnnCmPC1CK-ELWoPX7WcJakSlnqLOX4F3KYVmBBsN0CQ-gh8VsUA/exec";
+let rsvpLastAnswers=null;
+
 rsvpForm.addEventListener("submit",async e=>{
   e.preventDefault();
   rsvpError.hidden=true;
@@ -390,6 +412,7 @@ rsvpForm.addEventListener("submit",async e=>{
     "Allergien oder aner Ufuerderungen fir d'Iessen":document.getElementById("rsvpAllergies").value,
     "Kommentar":document.getElementById("rsvpComment").value
   };
+  if(rsvpUpdateEmail)payload.updateEmail=rsvpUpdateEmail;
   try{
     const res=await fetch(RSVP_ENDPOINT,{
       method:"POST",
@@ -399,13 +422,64 @@ rsvpForm.addEventListener("submit",async e=>{
     const json=await res.json();
     if(json.status!=="ok")throw new Error(json.message||"unknown error");
     rsvpForm.classList.add("hide");
-    rsvpThanks.classList.add("show");
+    const wasUpdate=!!rsvpUpdateEmail;
+    rsvpUpdateEmail=null;
+    if(json.alreadyRegistered){
+      rsvpShowAlready(json.answers);
+    }else{
+      rsvpThanksText.textContent=wasUpdate?"Är Ännerungen goufen gespäichert. Merci!":"Är Umellung ass ukomm. Mir freeën eis drop!";
+      rsvpThanks.classList.add("show");
+    }
   }catch(err){
     console.error("RSVP submit failed:",err);
     rsvpError.hidden=false;
     rsvpSubmit.disabled=false;
     rsvpSubmit.textContent="Umellen";
   }
+});
+
+function rsvpShowAlready(answers){
+  rsvpLastAnswers=answers||{};
+  rsvpAlreadySummary.textContent="";
+  const rows=[
+    ["Numm","Virnumm an Numm"],
+    ["Gäscht","Unzuel Gäscht"],
+    ["Allergien","Allergien oder aner Ufuerderungen fir d'Iessen"],
+    ["Kommentar","Kommentar"]
+  ];
+  rows.forEach(([label,key])=>{
+    const val=answers&&answers[key];
+    if(!val)return;
+    const row=document.createElement("div");
+    row.className="rsvp-summary-row";
+    const k=document.createElement("span");k.className="k";k.textContent=label;
+    const v=document.createElement("span");v.className="v";v.textContent=val;
+    row.appendChild(k);row.appendChild(v);
+    rsvpAlreadySummary.appendChild(row);
+  });
+  rsvpAlready.classList.add("show");
+}
+rsvpAlreadyEdit.addEventListener("click",()=>{
+  const answers=rsvpLastAnswers||{};
+  document.getElementById("rsvpName").value=answers["Virnumm an Numm"]||"";
+  document.getElementById("rsvpEmail").value=answers["Email"]||"";
+  document.getElementById("rsvpAllergies").value=answers["Allergien oder aner Ufuerderungen fir d'Iessen"]||"";
+  document.getElementById("rsvpComment").value=answers["Kommentar"]||"";
+  const guestVal=answers["Unzuel Gäscht"]||"";
+  document.querySelectorAll('input[name="guestCount"]').forEach(r=>{r.checked=(r.value===guestVal);});
+  rsvpUpdateEmail=answers["Email"]||null;
+  rsvpAlready.classList.remove("show");
+  rsvpForm.classList.remove("hide");
+  rsvpSubmit.disabled=false;
+  rsvpSubmit.textContent="Ännerungen späicheren";
+});
+rsvpAlreadyBack.addEventListener("click",()=>{
+  rsvpForm.reset();
+  rsvpUpdateEmail=null;
+  rsvpAlready.classList.remove("show");
+  rsvpForm.classList.remove("hide");
+  rsvpSubmit.disabled=false;
+  rsvpSubmit.textContent="Umellen";
 });
 
 stage.addEventListener("click",open);
@@ -422,7 +496,7 @@ replay.addEventListener("click",close);
 dots.forEach((d,i)=>d.addEventListener("click",e=>{e.stopPropagation();goToPage(i);}));
 
 function isInteractive(el){
-  return !!el.closest("input, textarea, select, button, a, label, .page-dots, .rsvp-form");
+  return !!el.closest("input, textarea, select, button, a, label, .page-dots, .rsvp-form, .rsvp-thanks");
 }
 let dragX=null,dragY=null,didSwipe=false;
 book.addEventListener("pointerdown",e=>{
